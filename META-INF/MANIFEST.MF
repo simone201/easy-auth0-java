@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Created-By: Simone Renzo
+Implementation-Version: 0.0.1
+Specification-Vendor: it.simonerenzo.easyauth0
+Specification-Version: 0.0.1
+Implementation-Vendor: it.simonerenzo.easyauth0
+Class-Path: easyauth0.jar
+Export-Package: it.simonerenzo.easyauth0.client,it.simonerenzo.easyauth0.exceptions,it.simonerenzo.easyauth0.helpers,it.simonerenzo.easyauth0.models,it.simonerenzo.easyauth0.utils
