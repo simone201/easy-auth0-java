@@ -10,12 +10,15 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import it.simonerenzo.easyauth0.exceptions.LoginException
 import it.simonerenzo.easyauth0.models.Credentials
+import it.simonerenzo.easyauth0.models.RefreshResult
 import it.simonerenzo.easyauth0.models.User
 import mu.KLogging
 import okhttp3.FormBody
 import java.io.UnsupportedEncodingException
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.apache.commons.validator.routines.UrlValidator
+import java.net.MalformedURLException
 
 /**
  * Auth0 Client Class
@@ -62,6 +65,10 @@ class Auth0Client(val domain: String, val clientId: String,
             fullUrl = "https://$domain"
         else if (domain.startsWith("http://"))
             fullUrl = "https://" + domain.split("http://")[1]
+
+        // Then check if it valid
+        if(!UrlValidator.getInstance().isValid(fullUrl))
+            throw MalformedURLException("Invalid Domain URL")
 
         // Now we can initialize the verifier with the domain
         verifier = JWT.require(algorithm)
@@ -133,16 +140,16 @@ class Auth0Client(val domain: String, val clientId: String,
      * @param refreshToken logged user refresh token
      * @return credentials object with logged new user data
      */
-    fun refreshToken(refreshToken: String): Credentials {
+    fun refreshToken(refreshToken: String): Credentials? {
         val requestBody = FormBody.Builder()
-                .add("grant_type", "refresh_token")
+                .add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
                 .add("client_id", clientId)
-                .add("client_secret", clientSecret)
                 .add("refresh_token", refreshToken)
+                .add("scope", "openid")
                 .build()
 
         val request = Request.Builder()
-                .url("$fullUrl/oauth/token")
+                .url("$fullUrl/delegation")
                 .post(requestBody)
                 .build()
 
@@ -150,7 +157,8 @@ class Auth0Client(val domain: String, val clientId: String,
 
         if (response.isSuccessful) {
             try {
-                return buildCredentials(jsonMapper.readValue<TokenHolder>(response.body().string()))
+                return refreshCredentials(refreshToken,
+                        jsonMapper.readValue<RefreshResult>(response.body().string()))
             } catch(e: Exception) {
                 logger.error(e) { e.message }
                 throw LoginException("Refresh token request not valid")
@@ -174,6 +182,33 @@ class Auth0Client(val domain: String, val clientId: String,
             logger.error(e) { e.message }
             return false
         }
+    }
+
+    /**
+     * Updates user credentials by injecting new idToken (access token) after refresh,
+     * may throw NPE because of security purposes
+     *
+     * @param refreshToken request refresh_token to search for user
+     * @param refreshResult result parsed from refresh request
+     * @return updated credentials object with new idToken (access token)
+     */
+    private fun refreshCredentials(refreshToken: String, refreshResult: RefreshResult): Credentials? {
+        var updatedCred: Credentials? = null
+
+        credsMap.forEach { _, credentials ->
+            if (credentials.refreshToken == refreshToken) {
+                tokensMap.remove(credentials.accessToken)
+                tokensMap.put(refreshResult.idToken, credentials.user.email)
+                credentials.accessToken = refreshResult.idToken
+                credentials.expiresIn = refreshResult.expiresIn
+
+                updatedCred = credentials
+
+                return@forEach
+            }
+        }
+
+        return updatedCred
     }
 
     /**
