@@ -96,7 +96,7 @@ open class BasicAuth0Helper(val domain: String, val clientId: String,
      * @param authHeader Authorization header value (Bearer <Refresh Token>)
      * @return credentials object with logged new user data
      */
-    override fun refresh(authHeader: String): Credentials {
+    override fun refresh(authHeader: String): Credentials? {
         return authClient.refreshToken(Utils.getBearerToken(authHeader, logger))
     }
 

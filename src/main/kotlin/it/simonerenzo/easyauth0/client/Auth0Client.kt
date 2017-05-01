@@ -67,12 +67,14 @@ class Auth0Client(val domain: String, val clientId: String,
             fullUrl = "https://" + domain.split("http://")[1]
 
         // Then check if it valid
-        if(!UrlValidator.getInstance().isValid(fullUrl))
+        val validator = UrlValidator(UrlValidator.ALLOW_LOCAL_URLS)
+        if(!validator.isValid(fullUrl))
             throw MalformedURLException("Invalid Domain URL")
 
         // Now we can initialize the verifier with the domain
         verifier = JWT.require(algorithm)
                 .withIssuer(fullUrl + "/")
+                .acceptLeeway(1)
                 .build()
     }
 
