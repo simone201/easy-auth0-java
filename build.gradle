@@ -6,13 +6,16 @@ buildscript {
 
     repositories {
         mavenCentral()
+        jcenter()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
     }
 }
 
 apply plugin: 'kotlin'
+apply plugin: 'com.bmuschko.nexus'
 
 repositories {
     mavenCentral()
@@ -35,4 +38,47 @@ dependencies {
 
     testCompile 'io.kotlintest:kotlintest:2.0.1'
     testCompile 'org.mock-server:mockserver-netty:3.10.5'
+}
+
+modifyPom {
+    project {
+        name 'Easy Auth0 Java Library'
+        description 'Java Library that allows a simpler access to Auth0 APIs'
+        url 'https://github.com/bmuschko/gradle-nexus-plugin'
+        inceptionYear '2017'
+
+        scm {
+            url 'https://github.com/simone201/easy-auth0-java'
+            connection 'scm:https://simone201@github.com/simone201/easy-auth0-java.git'
+            developerConnection 'scm:git://github.com/simone201/easy-auth0-java.git'
+        }
+
+        licenses {
+            license {
+                name 'The GNU Lesser General Public License, Version 3.0'
+                url 'http://www.gnu.org/licenses/lgpl-3.0.txt'
+                distribution 'repo'
+            }
+        }
+
+        developers {
+            developer {
+                id 'simone201'
+                name 'Simone Renzo'
+                email 'simone201@gmail.com'
+            }
+        }
+    }
+}
+
+extraArchive {
+    sources = false
+    tests = false
+    javadoc = false
+}
+
+nexus {
+    sign = true
+    repositoryUrl = 'https://nexus.matteojoliveau.com/content/repositories/internal/'
+    snapshotRepositoryUrl = 'https://nexus.matteojoliveau.com/content/repositories/internal-snapshots/'
 }
