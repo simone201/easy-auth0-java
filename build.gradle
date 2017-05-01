@@ -2,7 +2,7 @@ group 'it.simonerenzo'
 version '0.0.1-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.1.2'
+    ext.kotlin_version = '1.1.2-2'
 
     repositories {
         mavenCentral()
@@ -28,9 +28,11 @@ dependencies {
     compile 'com.auth0:auth0:1.0.0'
     compile 'com.auth0:java-jwt:3.1.0'
 
+    compile 'commons-validator:commons-validator:1.6'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.8'
     compile 'com.fasterxml.jackson.module:jackson-module-kotlin:2.8.8'
     compile 'com.squareup.okhttp3:okhttp:3.7.0'
 
     testCompile 'io.kotlintest:kotlintest:2.0.1'
+    testCompile 'org.mock-server:mockserver-netty:3.10.5'
 }
