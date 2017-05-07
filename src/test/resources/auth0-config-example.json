@@ -1,0 +1,24 @@
+{
+  "domain": "your_domain.here",
+  "client_id": "your_client_id_here",
+  "client_secret": "your_client_secret_here",
+  "realm": "your_realm_here",
+  "audience": "your_audience_here",
+
+  "user_right": {
+    "email": "user@domain.tld",
+    "username": "user",
+    "password": "password"
+  },
+
+  "user_wrong": {
+    "email": "user2@fakedomain.tld",
+    "username": "fake_user",
+    "password": "fake_password"
+  },
+
+  "users_expected": [
+    "mail@domain.tld",
+    "mail2@domain2.tld2"
+  ]
+}
