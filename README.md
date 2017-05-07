@@ -1,5 +1,6 @@
-# Easy Auth0 Java Library
-A Java Library that allows a simpler access to Auth0 APIs, written in Kotlin, compatible with any JVM language.
+# Easy Auth0 JVM Library
+A JVM Library that allows a simpler access to Auth0 APIs, written in Kotlin, 
+compatible with Java/Groovy/Scala (by using the .jar file or Maven artifact).
 
 Allows you to implement a simple authentication in your app with:
 - Username/Password login
