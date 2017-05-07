@@ -52,9 +52,9 @@ import java.net.MalformedURLException
 class Auth0Client(val domain: String, val clientId: String,
                   val clientSecret: String, val connection: String) {
 
-    // Constants
-    private val GRANT_REFRESH = "refresh_token"
-    private val GRANT_REQUEST = "client_credentials"
+    // Auth0 Grants
+    private val AUTH0_GRANT_REFRESH = "refresh_token"
+    private val AUTH0_GRANT_REQUEST = "client_credentials"
 
     // Auth0 APIs
     private val AUTH0_OAUTH_TOKEN = "/oauth/token"
@@ -179,7 +179,7 @@ class Auth0Client(val domain: String, val clientId: String,
      */
     fun refreshToken(refreshToken: String): Credentials? {
         val requestBody = FormBody.Builder()
-                .add("grant_type", GRANT_REFRESH)
+                .add("grant_type", AUTH0_GRANT_REFRESH)
                 .add("client_id", clientId)
                 .add("client_secret", clientSecret)
                 .add("refresh_token", refreshToken)
@@ -267,7 +267,7 @@ class Auth0Client(val domain: String, val clientId: String,
      */
     private fun grantRequest(audience: String): String {
         val requestBody = FormBody.Builder()
-                .add("grant_type", GRANT_REQUEST)
+                .add("grant_type", AUTH0_GRANT_REQUEST)
                 .add("client_id", clientId)
                 .add("client_secret", clientSecret)
                 .add("audience", audience)
