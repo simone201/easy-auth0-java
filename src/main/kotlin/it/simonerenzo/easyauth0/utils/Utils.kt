@@ -92,7 +92,6 @@ object Utils {
      */
     fun getBearerToken(authHeader: String, logger: KLogger): String {
         if (authHeader.startsWith("Bearer")) {
-            logger.info(trim(authHeader).split(" ")[1].trim())
             return trim(authHeader).split(" ")[1].trim()
         } else {
             logger.error("Invalid Authentication header")

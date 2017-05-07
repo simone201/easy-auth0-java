@@ -52,6 +52,24 @@ import java.net.MalformedURLException
 class Auth0Client(val domain: String, val clientId: String,
                   val clientSecret: String, val connection: String) {
 
+    // Constants
+    private val GRANT_REFRESH = "refresh_token"
+    private val GRANT_REQUEST = "client_credentials"
+
+    // Auth0 APIs
+    private val AUTH0_OAUTH_TOKEN = "/oauth/token"
+
+    // Auth0 Scopes
+    private val AUTH0_SCOPE_OPENID = "openid"
+    private val AUTH0_SCOPE_OFFACC = "offline_access"
+
+    // JSON Keys
+    private val KEY_ACCESS_TOKEN = "access_token"
+    private val KEY_USERNAME = "username"
+    private val KEY_NAME = "name"
+    private val KEY_NICKNAME = "nickname"
+    private val KEY_EMAIL = "email"
+
     // Kotlin Logger
     private companion object: KLogging()
 
@@ -108,7 +126,7 @@ class Auth0Client(val domain: String, val clientId: String,
         try {
             // Get the auth tokens
             val tokenHolder = authClient.login(userOrEmail, password, connection)
-                    .setScope("openid offline_access")
+                    .setScope("$AUTH0_SCOPE_OPENID $AUTH0_SCOPE_OFFACC")
                     .execute()
 
             return buildCredentials(tokenHolder)
@@ -161,14 +179,15 @@ class Auth0Client(val domain: String, val clientId: String,
      */
     fun refreshToken(refreshToken: String): Credentials? {
         val requestBody = FormBody.Builder()
-                .add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+                .add("grant_type", GRANT_REFRESH)
                 .add("client_id", clientId)
+                .add("client_secret", clientSecret)
                 .add("refresh_token", refreshToken)
-                .add("scope", "openid")
+                .add("scope", AUTH0_SCOPE_OPENID)
                 .build()
 
         val request = Request.Builder()
-                .url("$fullUrl/delegation")
+                .url("$fullUrl$AUTH0_OAUTH_TOKEN")
                 .post(requestBody)
                 .build()
 
@@ -180,10 +199,12 @@ class Auth0Client(val domain: String, val clientId: String,
                         jsonMapper.readValue<RefreshResult>(response.body().string()))
             } catch(e: Exception) {
                 logger.error(e) { e.message }
-                throw LoginException("Refresh token request not valid")
+                throw LoginException("Refresh token request not valid: "
+                        + response.code() + " - " + response.message())
             }
         } else {
-            throw LoginException("Refresh token request not valid")
+            throw LoginException("Refresh token request failed: "
+                    + response.code() + " - " + response.message())
         }
     }
 
@@ -201,6 +222,74 @@ class Auth0Client(val domain: String, val clientId: String,
             logger.error(e) { e.message }
             return false
         }
+    }
+
+    /**
+     * Retrieve users from a realm
+     *
+     * @param audience api identifier
+     * @return users list of the realm
+     */
+    fun retrieveUsers(audience: String): MutableList<User> {
+        val accessToken = grantRequest(audience)
+
+        val request = Request.Builder()
+                .url("$fullUrl/api/v2/users?connection=$connection")
+                .header("Authorization", "Bearer $accessToken")
+                .get().build()
+
+        val response = httpClient.newCall(request).execute()
+
+        val users = mutableListOf<User>()
+
+        if(response.isSuccessful) {
+            val jsonRoot = jsonMapper.readTree(response.body().string())
+            jsonRoot.asIterable().forEach { jsonNode ->
+                val usr = User(jsonNode.get(KEY_NICKNAME).asText(),
+                        jsonNode.get(KEY_USERNAME).asText(),
+                        jsonNode.get(KEY_EMAIL).asText())
+
+                users.add(usr)
+            }
+        } else {
+            logger.warn("Users request failed or no users found")
+        }
+
+        return users
+    }
+
+    /**
+     * Grant an authorization request using audience
+     * and Client ID and Secret tokens
+     *
+     * @param audience api identifier
+     * @return access token to use APIs
+     */
+    private fun grantRequest(audience: String): String {
+        val requestBody = FormBody.Builder()
+                .add("grant_type", GRANT_REQUEST)
+                .add("client_id", clientId)
+                .add("client_secret", clientSecret)
+                .add("audience", audience)
+                .build()
+
+        val request = Request.Builder()
+                .url("$fullUrl$AUTH0_OAUTH_TOKEN")
+                .post(requestBody)
+                .build()
+
+        val response = httpClient.newCall(request).execute()
+
+        if (response.isSuccessful) {
+            try {
+                val jsonNode = jsonMapper.readTree(response.body().string())
+                return jsonNode.get(KEY_ACCESS_TOKEN).asText("x.y.z")
+            } catch (e: Exception) {
+                logger.error(e) { e.message }
+            }
+        }
+
+        return "x.y.z"
     }
 
     /**
@@ -243,13 +332,13 @@ class Auth0Client(val domain: String, val clientId: String,
                 .values
 
         // Clean any eventual duplicate in data maps
-        tokensMap.remove(credsMap[userInfo["email"]]?.accessToken)
-        credsMap.remove(userInfo["email"])
+        tokensMap.remove(credsMap[userInfo[KEY_EMAIL]]?.accessToken)
+        credsMap.remove(userInfo[KEY_EMAIL])
 
         // Parse info as User object
-        val loggedUser = User(userInfo["nickname"] as String,
-                userInfo["name"] as String,
-                userInfo["email"] as String)
+        val loggedUser = User(userInfo[KEY_NICKNAME] as String,
+                userInfo[KEY_NAME] as String,
+                userInfo[KEY_EMAIL] as String)
 
         // Parse auth data to Credentials object
         val credentials = Credentials(loggedUser,

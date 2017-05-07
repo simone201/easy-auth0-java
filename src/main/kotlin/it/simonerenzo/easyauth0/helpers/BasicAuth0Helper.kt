@@ -19,6 +19,7 @@ package it.simonerenzo.easyauth0.helpers
 
 import it.simonerenzo.easyauth0.client.Auth0Client
 import it.simonerenzo.easyauth0.models.Credentials
+import it.simonerenzo.easyauth0.models.User
 import it.simonerenzo.easyauth0.utils.Utils
 import mu.KLogging
 import javax.security.auth.login.LoginException
@@ -125,6 +126,16 @@ open class BasicAuth0Helper(val domain: String, val clientId: String,
      */
     override fun reset(email: String): Boolean {
         return authClient.resetPassword(email)
+    }
+
+    /**
+     * Retrieve users from a realm
+     *
+     * @param audience api identifier
+     * @return users list of the realm
+     */
+    override fun mails(audience: String): MutableList<User> {
+        return authClient.retrieveUsers(audience)
     }
 
 }

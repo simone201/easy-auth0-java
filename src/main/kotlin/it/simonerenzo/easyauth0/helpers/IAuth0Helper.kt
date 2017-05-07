@@ -18,6 +18,7 @@
 package it.simonerenzo.easyauth0.helpers
 
 import it.simonerenzo.easyauth0.models.Credentials
+import it.simonerenzo.easyauth0.models.User
 
 interface IAuth0Helper {
     fun login(authHeader: String): Credentials
@@ -25,4 +26,5 @@ interface IAuth0Helper {
     fun authorize(authHeader: String): Boolean
     fun refresh(authHeader: String): Credentials?
     fun reset(email: String): Boolean
+    fun mails(audience: String): MutableList<User>
 }
